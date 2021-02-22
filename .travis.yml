@@ -1,0 +1,22 @@
+sudo: required
+services:
+  - docker
+
+before_install:
+  - docker build -t lorki/react-test -f ./client/Dockerfile.dev ./client
+
+script: 
+  - docker run -e CI=true lorki/react-test npm test -- --coverage
+
+after_success:
+  - docker build -t lorki/multi-client ./client
+  - docker build -t lorki/multi-nginx ./nginx
+  - docker build -t lorki/multi-server ./server
+  - docker build -t lorki/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --pasword-stdin
+  # Take those images and push them to docker hub
+  - docker push lorki/multi-client
+  - docker push lorki/multi-nginx
+  - docker push lorki/multi-server
+  - docker push lorki/multi-worker
